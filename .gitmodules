@@ -1,0 +1,3 @@
+[submodule "TrajectryGeneration"]
+	path = DataGeneration/TrajectryGeneration
+	url = https://github.com/Emile-Aquila/TrajectryGeneration.git
