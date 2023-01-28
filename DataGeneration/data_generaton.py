@@ -75,6 +75,7 @@ def import_training_data(path_data_path: str, pc_data_path: str) -> tuple[dict, 
         pc_data = yaml.load(file, yaml.Loader)
     return path_data, pc_data
 
+
 @hydra.main(config_path="../conf", config_name="config.yaml")
 def main(conf: DictConfig):
     # パラメータ設定
