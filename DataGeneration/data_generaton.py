@@ -9,7 +9,8 @@ from TrajectryGeneration.objects.field import Field, Rectangle, Circle
 from TrajectryGeneration.objects.Point2D import Point2D
 from TrajectryGeneration.RRT import RRT_star, RRT
 import yaml
-
+import hydra
+from omegaconf import DictConfig
 sys.path.append(os.path.join(os.path.dirname(__file__), '/TrajectryGeneration'))
 
 
@@ -74,14 +75,18 @@ def import_training_data(path_data_path: str, pc_data_path: str) -> tuple[dict, 
         pc_data = yaml.load(file, yaml.Loader)
     return path_data, pc_data
 
+@hydra.main(config_path="../conf", config_name="config.yaml")
+def main(conf: DictConfig):
+    # パラメータ設定
+    generate_field_num = int(conf.TrainingDataParams.generate_field_num)  # フィールドの生成数
+    object_num = int(conf.TrainingDataParams.object_num)  # フィールド上のオブジェクト数
+    point_num = int(conf.TrainingDataParams.point_num)  # フィールド上に配置する点の数(ここからランダムにstart/goal地点が選択)
+    point_cloud_num = int(conf.TrainingDataParams.point_cloud_num)  # 点群の点数
 
-if __name__ == '__main__':
-    generate_field_num = 1  # フィールドの生成数
-    object_num = 1  # フィールド上のオブジェクト数
-    point_num = 2  # フィールド上に配置する点の数(ここからランダムにstart/goal地点が選択される。)
-    point_cloud_num = 100  # 点群の点数
-
+    # 環境の生成
     fields, points = field_generator(generate_field_num, object_num, point_num)  # フィールド生成
+
+    # データの生成
     paths = gen_path_data(fields, points)  # 各フィールドとスタート/ゴール地点に対して経路を生成。
 
     id_pc_data = dict()  # (field_id, point cloud)のデータ
@@ -96,6 +101,7 @@ if __name__ == '__main__':
         point_clouds = generate_point_cloud(fields[i], point_cloud_num, object_num)  # 各fieldに対応する点群データ
         id_pc_data[i] = point_clouds
 
+    # データの書き込み
     with open("./id_pc_data.yaml", "w") as file:
         yaml.dump(id_pc_data, file)
 
@@ -112,3 +118,7 @@ if __name__ == '__main__':
         plt.show()
 
     import_training_data("./id_path_data.yaml", "./id_pc_data.yaml")
+
+
+if __name__ == '__main__':
+    main()
