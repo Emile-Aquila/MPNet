@@ -1,0 +1,5 @@
+TrainingDataParams:  # 教師データ作成用のパラメータ
+  generate_field_num: 10  # フィールドの生成数
+  object_num: 7  # フィールド上のオブジェクト数
+  point_num: 5  # フィールド上に配置する点の数(ここからランダムにstart/goal地点が選択される。)
+  point_cloud_num: 2500  # 点群の点数
