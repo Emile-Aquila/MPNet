@@ -1,17 +1,18 @@
+import itertools
 import os
 import sys
-import numpy as np
+import hydra
 import matplotlib.pyplot as plt
+import numpy as np
+import yaml
+from omegaconf import DictConfig
 from tqdm import tqdm
-import itertools
-from TrajectryGeneration.models import Robot_model
+
+sys.path.append(os.path.join(os.path.dirname(__file__), '/TrajectryGeneration'))
+
 from TrajectryGeneration.objects.field import Field, Rectangle, Circle
 from TrajectryGeneration.objects.Point2D import Point2D
-from TrajectryGeneration.RRT import RRT_star, RRT
-import yaml
-import hydra
-from omegaconf import DictConfig
-sys.path.append(os.path.join(os.path.dirname(__file__), '/TrajectryGeneration'))
+from TrajectryGeneration.RRT import RRT_star
 
 
 def field_generator(N: int, object_num: int, point_num: int) -> (list[Field], list[list[Point2D]]):
@@ -20,11 +21,12 @@ def field_generator(N: int, object_num: int, point_num: int) -> (list[Field], li
     obstacle_L: float = 5.0
     fields: list[None | Field] = [None] * N
     points: list[list[None | Point2D]] = [[None] * point_num for _ in range(N)]
-    obj_points = np.random.rand(N, object_num, 2) * (field_L-obstacle_L) - (field_L - obstacle_L) / 2.0
+    obj_points = np.random.rand(N, object_num, 2) * (field_L - obstacle_L) - (field_L - obstacle_L) / 2.0
 
     for i in range(N):
         tmp_field = Field(w=field_L, h=field_L, center=True)
-        objects = [Rectangle(x=pt[0], y=pt[1], w=obstacle_L, h=obstacle_L, theta=0.0, fill=True) for pt in obj_points[i]]
+        objects = [Rectangle(x=pt[0], y=pt[1], w=obstacle_L, h=obstacle_L, theta=0.0, fill=True) for pt in
+                   obj_points[i]]
         tmp_field.obstacles += objects
         index: int = 0
         while index < point_num:
@@ -68,7 +70,7 @@ def gen_path_data(fields: list[Field], points: list[list[Point2D]]) -> list[list
     return ans_paths
 
 
-def import_training_data(path_data_path: str, pc_data_path: str) -> tuple[dict, dict]:
+def load_training_data(path_data_path: str, pc_data_path: str) -> tuple[dict, dict]:
     with open(path_data_path) as file:
         path_data = yaml.load(file, yaml.Loader)
     with open(pc_data_path) as file:
@@ -76,7 +78,7 @@ def import_training_data(path_data_path: str, pc_data_path: str) -> tuple[dict, 
     return path_data, pc_data
 
 
-@hydra.main(config_path="../conf", config_name="config.yaml")
+@hydra.main(version_base=None, config_path="../conf", config_name="config.yaml")
 def main(conf: DictConfig):
     # パラメータ設定
     generate_field_num = int(conf.TrainingDataParams.generate_field_num)  # フィールドの生成数
@@ -94,9 +96,11 @@ def main(conf: DictConfig):
     id_path_data = dict()  # (field_id, path)のデータ
 
     for i, tmp_paths in enumerate(paths):
+        tmp_list = []
         for tmp_path in tmp_paths:
             tmp_path_tuple = [point.getXY() for point in tmp_path]
-            id_path_data[i] = tmp_path_tuple
+            tmp_list.append(tmp_path_tuple)
+        id_path_data[i] = tmp_list
 
     for i in range(len(fields)):
         point_clouds = generate_point_cloud(fields[i], point_cloud_num, object_num)  # 各fieldに対応する点群データ
@@ -118,7 +122,7 @@ def main(conf: DictConfig):
             ax.plot(node.x, node.y, color="red", marker='x', markersize=5.0)
         plt.show()
 
-    import_training_data("./id_path_data.yaml", "./id_pc_data.yaml")
+    # load_training_data("./id_path_data.yaml", "./id_pc_data.yaml")
 
 
 if __name__ == '__main__':
