@@ -65,7 +65,7 @@ def gen_path_data(fields: list[Field], points: list[list[Point2D]]) -> list[list
                 if path is not None:
                     paths.append(path)
             else:
-                paths.append(start_goal)
+                paths.append([start_goal[0], start_goal[1]])
         ans_paths.append(paths)
     return ans_paths
 
@@ -98,7 +98,7 @@ def main(conf: DictConfig):
     for i, tmp_paths in enumerate(paths):
         tmp_list = []
         for tmp_path in tmp_paths:
-            tmp_path_tuple = [point.getXY() for point in tmp_path]
+            tmp_path_tuple = [list(point.getXY()) for point in tmp_path]
             tmp_list.append(tmp_path_tuple)
         id_path_data[i] = tmp_list
 
