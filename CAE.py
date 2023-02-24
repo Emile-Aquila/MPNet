@@ -5,9 +5,9 @@ import torch
 import torch.nn as nn
 import yaml
 from omegaconf import DictConfig
+from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 from models import EncoderNetwork, DecoderNetwork, get_model_weights_sum
-from torch.utils.tensorboard import SummaryWriter
 dev = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
@@ -48,7 +48,7 @@ def load_dataset(path_data_path: str, pc_data_path: str) -> tuple[np.array, list
         point_clouds.append(np.array(pc_data[map_id]).flatten())  # 各point_cloudはnp.array
         for path in path_data[map_id]:
             path_id_tuples.append((np.array(path), map_id))
-    return np.array(point_clouds),  path_id_tuples
+    return np.array(point_clouds), path_id_tuples
 
 
 @hydra.main(version_base=None, config_path="./conf", config_name="config.yaml")
