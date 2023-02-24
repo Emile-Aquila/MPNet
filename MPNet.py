@@ -1,7 +1,7 @@
-import torch
-from models import PlannerNetwork, EncoderNetwork
-from NeuralPlanner import NeuralPlanner
 from typing import TypeVar, Generic
+import torch
+from NeuralPlanner import NeuralPlanner
+from models import PlannerNetwork, EncoderNetwork
 
 State = TypeVar("State")
 

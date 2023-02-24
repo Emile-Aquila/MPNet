@@ -3,3 +3,5 @@
 /__pycache__
 /DataGeneration/outputs
 /outputs
+/logs
+/models/tmp

@@ -1,5 +1,6 @@
-import torch.nn as nn
 import torch
+import torch.nn as nn
+
 
 class PlannerNetwork(nn.Module):  # Planner Network
     def __init__(self, input_size: int, output_size: int) -> None:
@@ -11,8 +12,9 @@ class PlannerNetwork(nn.Module):  # Planner Network
             nn.Linear(64, output_size)
         )
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        y = self.models(x)
+    def forward(self, x: torch.Tensor, x_target: torch.Tensor, z: torch.Tensor) -> torch.Tensor:
+        tmp = torch.cat((x, x_target, z), dim=0)
+        y = self.models(tmp)
         return y
 
 
@@ -49,7 +51,7 @@ class DecoderNetwork(nn.Module):
         return y
 
 
-def get_model_weights_sum(sequential: nn.Sequential, norm_l:int ,dev: torch.device) -> torch.Tensor:
+def get_model_weights_sum(sequential: nn.Sequential, norm_l: int, dev: torch.device) -> torch.Tensor:
     weight_sum = torch.tensor(0.0, requires_grad=True).to(dev)
     for w in sequential.parameters():
         weight_sum = weight_sum + torch.norm(w, norm_l)
