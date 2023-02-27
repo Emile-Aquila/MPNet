@@ -1,4 +1,3 @@
-from typing import TypeVar, Generic
 import hydra
 import numpy as np
 import torch
@@ -8,36 +7,6 @@ from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 from CAE import load_dataset, CAE
 from models import PlannerNetwork
-State = TypeVar("State")
-
-
-class NeuralPlanner(Generic[State]):
-    PNet: PlannerNetwork
-    device: torch.device
-
-    def __init__(self, PNet: PlannerNetwork):
-        self.dev = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        self.PNet = PNet.to(self.dev)
-        self.MSE = nn.MSELoss()
-
-    def planning(self, start_state: State, goal_state: State, Z, iter_times: int) -> list[State]:
-        tau_a, tau_b = list[State]([start_state]), list[State]([goal_state])
-        for i in range(iter_times):
-            if i % 2 == 0:
-                state_new = self.PNet(tau_a[-1], tau_b[-1], Z)
-                tau_a.append(state_new)
-            else:
-                state_new = self.PNet(tau_b[-1], tau_a[-1], Z)
-                tau_b.append(state_new)
-            if self.SteerTo(tau_a[-1], tau_b[-1]):
-                return tau_a + tau_b
-        print("[WARN] Cannot generating trajectory (NeuralPlanner)")
-        return list[State]()
-
-    def SteerTo(self, state1: State, state2: State) -> bool:
-        # check connectivity of (state1, state2)
-        # TODO : 実装
-        return True
 
 
 @hydra.main(version_base=None, config_path="./conf", config_name="config.yaml")
@@ -57,9 +26,8 @@ def train(conf: DictConfig):
 
     p_net = PlannerNetwork(input_size=conf.CAEParams.latent_space_size + 2 * conf.PNetParams.coordinates_dim,
                            output_size=conf.PNetParams.coordinates_dim)
-    neural_planner: NeuralPlanner = NeuralPlanner(PNet=p_net)
-    optimizer = torch.optim.Adagrad(neural_planner.PNet.parameters())
-    print("Planner Network: {}".format(neural_planner.PNet.models))
+    optimizer = torch.optim.Adagrad(p_net.parameters())
+    print("Planner Network: {}".format(p_net.models))
 
     writer = SummaryWriter(log_dir="./logs/PNet")
 
@@ -77,15 +45,15 @@ def train(conf: DictConfig):
     for epoch in tqdm(range(conf.PNetParams.epoch_num)):
         epoch_losses = []
         for i in range(0, len(path_id_tuples), batch_size):
-            neural_planner.PNet.zero_grad()
+            p_net.zero_grad()
             path_id_tuples_pre: np.array = path_id_tuples[i:min(i + batch_size, len(path_id_tuples) - 1)]
             traj_losses = []
             for path_id_tuple in path_id_tuples_pre:
                 traj, field_id = path_id_tuple  # traj: np.array
-                traj = torch.Tensor(traj).to(neural_planner.dev)
+                traj = torch.Tensor(traj).to(p_net.dev)
                 x_target = traj[-1]
                 x_hats = torch.cat(
-                    [neural_planner.PNet.forward(x, x_target, latent_spaces[field_id]) for x in traj[0:-1]], dim=0)
+                    [p_net.forward(x, x_target, latent_spaces[field_id]) for x in traj[0:-1]], dim=0)
                 traj_losses.append(mse(x_hats, traj[1:].flatten()))
             loss = torch.stack(traj_losses).mean()
             loss.backward()
@@ -93,7 +61,7 @@ def train(conf: DictConfig):
             epoch_losses.append(loss.item())
         writer.add_scalar("epoch_loss", sum(epoch_losses) / len(epoch_losses), epoch)
     writer.close()
-    torch.save(neural_planner.PNet.cpu().state_dict(), "models/tmp/pnet.pth")
+    torch.save(p_net.cpu().state_dict(), "models/tmp/pnet.pth")
 
 
 def main():
