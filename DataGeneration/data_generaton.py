@@ -8,6 +8,7 @@ import yaml
 from omegaconf import DictConfig
 from tqdm import tqdm
 
+sys.path.append(os.path.dirname(__file__))
 sys.path.append(os.path.join(os.path.dirname(__file__), '/TrajectryGeneration'))
 
 from TrajectryGeneration.objects.field import Field, Rectangle, Circle

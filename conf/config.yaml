@@ -16,3 +16,8 @@ PNetParams:  # Planner Network学習用のパラメータ
   coordinates_dim: 2  # 座標の次元数
   epoch_num: 100
   batch_size: 4
+
+
+MPNetParams:  # MPNetのパラメータ
+  steer_to_div_num: 10
+  planning_max_step: 100
