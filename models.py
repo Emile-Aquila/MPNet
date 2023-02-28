@@ -7,12 +7,15 @@ class PlannerNetwork(nn.Module):  # Planner Network
         super(PlannerNetwork, self).__init__()
         self.models = nn.Sequential(
             nn.Linear(input_size, 1024), nn.PReLU(), nn.Dropout(),
-            nn.Linear(1024, 512), nn.PReLU(), nn.Dropout(),
-            nn.Linear(512, 512), nn.PReLU(), nn.Dropout(),
-            nn.Linear(512, 512), nn.PReLU(), nn.Dropout(),
-            nn.Linear(512, 256), nn.PReLU(), nn.Dropout(),
-            nn.Linear(256, 64), nn.PReLU(),
-            nn.Linear(64, output_size)
+            nn.Linear(1024, 896), nn.PReLU(), nn.Dropout(),
+            nn.Linear(896, 768), nn.PReLU(), nn.Dropout(),
+            nn.Linear(768, 512), nn.PReLU(), nn.Dropout(),
+            nn.Linear(512, 384), nn.PReLU(), nn.Dropout(),
+            nn.Linear(384, 256), nn.PReLU(), nn.Dropout(),
+            nn.Linear(256, 128), nn.PReLU(), nn.Dropout(),
+            nn.Linear(128, 64), nn.PReLU(), nn.Dropout(),
+            nn.Linear(64, 32), nn.PReLU(),
+            nn.Linear(32, output_size)
         )
 
     def forward(self, x: torch.Tensor, x_target: torch.Tensor, z: torch.Tensor) -> torch.Tensor:

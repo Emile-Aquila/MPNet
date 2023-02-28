@@ -25,7 +25,7 @@ def train(conf: DictConfig):
     cae.decoder.to(cae.dev)
 
     p_net = PlannerNetwork(input_size=conf.CAEParams.latent_space_size + 2 * conf.PNetParams.coordinates_dim,
-                           output_size=conf.PNetParams.coordinates_dim)
+                           output_size=conf.PNetParams.coordinates_dim).to(cae.dev)
     optimizer = torch.optim.Adagrad(p_net.parameters())
     print("Planner Network: {}".format(p_net.models))
 
