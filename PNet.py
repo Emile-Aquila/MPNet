@@ -50,7 +50,7 @@ def train(conf: DictConfig):
             traj_losses = []
             for path_id_tuple in path_id_tuples_pre:
                 traj, field_id = path_id_tuple  # traj: np.array
-                traj = torch.Tensor(traj).to(p_net.dev)
+                traj = torch.Tensor(traj).to(cae.dev)
                 x_target = traj[-1]
                 x_hats = torch.cat(
                     [p_net.forward(x, x_target, latent_spaces[field_id]) for x in traj[0:-1]], dim=0)

@@ -8,7 +8,10 @@ class PlannerNetwork(nn.Module):  # Planner Network
         self.models = nn.Sequential(
             nn.Linear(input_size, 1024), nn.PReLU(), nn.Dropout(),
             nn.Linear(1024, 512), nn.PReLU(), nn.Dropout(),
-            nn.Linear(512, 64), nn.PReLU(),
+            nn.Linear(512, 512), nn.PReLU(), nn.Dropout(),
+            nn.Linear(512, 512), nn.PReLU(), nn.Dropout(),
+            nn.Linear(512, 256), nn.PReLU(), nn.Dropout(),
+            nn.Linear(256, 64), nn.PReLU(),
             nn.Linear(64, output_size)
         )
 
@@ -24,6 +27,8 @@ class EncoderNetwork(nn.Module):  # Encoder Network
         self.models = nn.Sequential(
             nn.Linear(input_size, 512),
             nn.PReLU(),
+            # nn.Linear(512, 512),
+            # nn.PReLU(),
             nn.Linear(512, 256),
             nn.PReLU(),
             nn.Linear(256, 128),

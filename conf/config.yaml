@@ -1,23 +1,23 @@
 TrainingDataParams:  # 教師データ作成用のパラメータ
-  generate_field_num: 30  # フィールドの生成数
+  generate_field_num: 100  # フィールドの生成数
   object_num: 7  # フィールド上のオブジェクト数
-  point_num: 5  # フィールド上に配置する点の数(ここからランダムにstart/goal地点が選択される。)
+  point_num: 15  # フィールド上に配置する点の数(ここからランダムにstart/goal地点が選択される。)
   point_cloud_num: 1540  # 点群の点数(object_numの整数倍)
 
 
 CAEParams:  # CAE学習用のパラメータ
-  epoch_num: 80
+  epoch_num: 200
   batch_size: 4
-  latent_space_size: 32  # 潜在空間の次元数
+  latent_space_size: 48  # 潜在空間の次元数
   coordinates_dim: 2  # 座標の次元数
 
 
 PNetParams:  # Planner Network学習用のパラメータ
   coordinates_dim: 2  # 座標の次元数
-  epoch_num: 100
-  batch_size: 4
+  epoch_num: 200
+  batch_size: 64
 
 
 MPNetParams:  # MPNetのパラメータ
-  steer_to_div_num: 10
+  steer_to_div_num: 50
   planning_max_step: 100
