@@ -36,17 +36,20 @@ class MPNet:
         return False
 
     def _lazy_state_contraction(self, path: list):
-        # 直接つなげる経路点同士をつないで、無駄な経路点を除外。
+        # 直接つなげる経路点同士をつないで、無駄な経路点を除外。  # TODO: 修正
         if len(path) <= 2:
             return
         point_last: State = path[-1]
         for i in range(len(path[0:-2])):
-            if not self._steer_to(path[i], point_last, self.steer_to_div_num):
+            if self._steer_to(path[i], point_last, self.steer_to_div_num):
                 del path[i+1:-1]
                 return
 
     def _is_feasible(self, traj: list) -> bool:
         # 経路が衝突無く連続に繋がっているか判定。鋭角になってたらFalseを返す
+        for i in range(len(traj)-1):
+            if not self._steer_to(traj[i], traj[i+1], self.steer_to_div_num):
+                return False
         for i in range(1, len(traj)-2):
             v1 = [traj[i-1][j] - traj[i][j] for j in range(len(traj[i]))]
             v2 = [traj[i+1][j] - traj[i][j] for j in range(len(traj[i]))]
@@ -68,17 +71,16 @@ class MPNet:
     def _replanning(self, traj: list, z: torch.Tensor) -> list:
         # 経路の再生成
         traj_n, traj_ans = [], []
-        for i in range(len(traj)-1):
+        for i in range(len(traj)):
             if not self._check_collision(traj[i]):
                 traj_n.append(traj[i])
         traj_ans.append(traj_n[0])
-
         for i in range(len(traj_n)-1):
             if self._steer_to(traj_n[i], traj_n[i+1], self.steer_to_div_num):
-                traj_ans.append(traj[i+1])
+                traj_ans.append(traj_n[i+1])
             else:  # re-planning
                 traj_f, traj_b = [traj_n[i]], [traj_n[i+1]]
-                for j in range(50):
+                for j in range(100):
                     point_f = torch.Tensor(traj_f[-1]).to(self.dev)
                     point_b = torch.Tensor(traj_b[-1]).to(self.dev)
                     if j % 2 == 0:
@@ -89,8 +91,9 @@ class MPNet:
                         traj_b.append(x_new.tolist())
                     if self._steer_to(traj_f[-1], traj_b[-1], self.steer_to_div_num):
                         traj_ans += traj_f[1:] + list(reversed(traj_b))
-                    else:
-                        return list()
+                        break
+                    elif self._check_collision(traj_f[-1]) or self._check_collision(traj_b[-1]):
+                        traj_f, traj_b = [traj_n[i]], [traj_n[i+1]]
         return traj_ans
 
 
@@ -107,9 +110,7 @@ class MPNet:
                 traj_back.append(x_new.tolist())
             if self._steer_to(traj_forward[-1], traj_back[-1], self.steer_to_div_num):  # 接続判定
                 return traj_forward + list(reversed(traj_back))
-            print(traj_forward, traj_back)
-        # return list()
-        return traj_forward + list(reversed(traj_back))  # TODO: for Debug
+        return traj_forward + list(reversed(traj_back))
 
 
     def planning(self, start_point: State, goal_point: State, point_cloud: np.array) -> list:
@@ -118,7 +119,6 @@ class MPNet:
         if len(traj) == 0:
             return traj
         else:
-            return traj  # TODO: for debug
             self._lazy_state_contraction(traj)
             if self._is_feasible(traj):
                 return traj
@@ -127,13 +127,14 @@ class MPNet:
                 self._lazy_state_contraction(traj_new)
                 if self._is_feasible(traj_new):
                     return traj_new
+                # return traj_new  # TODO: for debug
         return list()
 
 
 def generate_test_field() -> Field:
     field = Field(w=20.0, h=20.0, center=True)
-    obstacle_l: float = 3.0
-    points = [[0.0, 0.0], [2.0, -2.0], [4.0, -5.0], [-2.0, 3.0], [-5.0, 3.0]]
+    obstacle_l: float = 5.0
+    points = [[0.0, 0.0], [3.0, -2.0], [7.0, -7.0], [-2.0, 7.0], [-7.0, 7.0], [-7.0, -7.0], [7,5]]
     for pt in points:
         field.add_obstacle(Rectangle(x=pt[0], y=pt[1], w=obstacle_l, h=obstacle_l, theta=0.0, fill=True))
 
@@ -164,18 +165,15 @@ def main(conf: DictConfig):
                           steer_to_div_num=conf.MPNetParams.steer_to_div_num,
                           field=field)
 
-    point_cloud: np.array = generate_point_cloud(field, num_pc=conf.TrainingDataParams.point_cloud_num, object_num=5)
+    point_cloud: np.array = generate_point_cloud(field, num_pc=conf.TrainingDataParams.point_cloud_num, object_num=7)
     z: torch.Tensor = cae.encoder(torch.from_numpy(point_cloud.flatten()).float().to(cae.dev))  # latent space
     pc_hat = cae.decoder(z)
     pc_hat = pc_hat.detach().numpy().reshape(conf.TrainingDataParams.point_cloud_num, 2)
-    fig = plt.figure()
-    ax1 = fig.add_subplot(2, 1, 1)
-    ax2 = fig.add_subplot(2, 1, 2)
-    ax1.scatter(point_cloud[:, 0], point_cloud[:, 1], label="pc")
-    ax2.scatter(pc_hat[:, 0], pc_hat[:, 1], label="pc_hat", color="red")
+    plt.scatter(point_cloud[:, 0], point_cloud[:, 1], label="pc")
     plt.show()
-
-    start_point, goal_point = [-3.0, -3.0], [5.0, 5.0]
+    plt.scatter(pc_hat[:, 0], pc_hat[:, 1], label="pc_hat", color="red")
+    plt.show()
+    start_point, goal_point = [-3.0, -3.0], [4.0, 6.0]
 
     traj = mp_net.planning(start_point, goal_point, point_cloud)
     print(traj)

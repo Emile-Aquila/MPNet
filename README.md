@@ -13,7 +13,9 @@ python PNet.py
 ```
 
 ### Generate Trajectory
-
+```
+python MPNet.py
+```
 
 ### Submodule 
  - [TrajectoryGeneration](https://github.com/Emile-Aquila/TrajectryGeneration)
