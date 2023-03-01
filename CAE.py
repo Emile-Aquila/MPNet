@@ -42,6 +42,7 @@ def load_training_data(path_data_path: str, pc_data_path: str) -> tuple[dict, di
 
 
 def load_dataset(path_data_path: str, pc_data_path: str) -> tuple[np.array, list]:
+    # TODO: 評価用のデータセットを分けて準備して、過学習してないか評価する
     point_clouds, path_id_tuples = [], []
     path_data, pc_data = load_training_data(path_data_path, pc_data_path)
     for map_id in path_data.keys():
